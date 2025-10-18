@@ -15,6 +15,20 @@ namespace AgroMarketApi.data
 
         protected override void OnModelCreating(ModelBuilder b)
         {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // Convierte automáticamente todo a minúsculas
+    foreach (var entity in modelBuilder.Model.GetEntityTypes())
+    {
+        entity.SetTableName(entity.GetTableName()!.ToLower());
+
+        foreach (var property in entity.GetProperties())
+            property.SetColumnName(property.GetColumnName()!.ToLower());
+    }
+
+    base.OnModelCreating(modelBuilder);
+}
+
             // Mapear nombres de tablas reales (minúsculas)
             b.Entity<Usuario>().ToTable("usuarios");
             b.Entity<Producto>().ToTable("productos");
