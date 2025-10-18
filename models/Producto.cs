@@ -7,7 +7,7 @@ namespace AgroMarketApi.models
     public class Producto
     {
         [Key]
-        [Column("id")] // 👈 fuerza a usar minúsculas en la columna
+        [Column("id")]
         public int Id { get; set; }
 
         [Column("nombre")]
@@ -25,10 +25,15 @@ namespace AgroMarketApi.models
         [Column("descripcion")]
         public string? Descripcion { get; set; }
 
-        [Column("productorid")]
-        public int ProductorId { get; set; }
+        // 🔴 Este campo faltaba y lo pide el controlador
+        [Column("activo")]
+        public bool Activo { get; set; } = true;
 
-        [Column("fecha")]
-        public DateTime Fecha { get; set; } = DateTime.UtcNow;
+        // Nombres que ya mapeaste en AppDbContext
+        [Column("productor_id")]
+        public int Productor_Id { get; set; }
+
+        [Column("fecha_publicacion")]
+        public DateTime Fecha_Publicacion { get; set; } = DateTime.UtcNow;
     }
 }
