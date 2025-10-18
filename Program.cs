@@ -10,17 +10,20 @@ builder.Services.AddDbContext<AppDbContext>(opts =>
     opts.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ======================================================
-// 2) Configuración de CORS, controladores y Swagger
+// 2) CORS, controladores y Swagger
 // ======================================================
 builder.Services.AddControllers();
 
-// Política CORS global (nombrada para que se use explícitamente)
+// 🚀 Política de CORS explícita y global
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            // 🔧 Acepta tu origen local de desarrollo
+            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500")
+            // 🔧 Acepta también tu dominio público de frontend (agrega el que uses si lo tienes)
+            .SetIsOriginAllowed(origin => true) // ⚠️ permite todos los orígenes (temporal, para Render)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -29,48 +32,41 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ======================================================
-// 3) Construcción de la aplicación
-// ======================================================
 var app = builder.Build();
 
 // ======================================================
-// 4) Middlewares
+// 3) Middleware global (Render-friendly)
 // ======================================================
 
-// ⚠️ Muy importante: usar la política CORS ANTES de mapear controladores
-app.UseCors("AllowAll");
+// ✅ CORS ANTES que todo
+app.UseCors("AllowFrontend");
 
-// Solo redirigir HTTPS si estás en producción
-if (app.Environment.IsProduction())
-{
-    app.UseHttpsRedirection();
-}
-
-// Swagger
-if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+// Render ya sirve HTTPS automáticamente — no lo fuerces
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Middleware de autorización (si lo usas más adelante)
+// Si usas auth (JWT o similar)
 app.UseAuthorization();
 
 // ======================================================
-// 5) Endpoints
+// 4) Endpoints
 // ======================================================
 app.MapControllers();
 
-// Health check rápido
+// Health check
 app.MapGet("/", () => Results.Ok(new
 {
     ok = true,
     api = "AgroMarketApi",
+    cors = "enabled",
+    env = app.Environment.EnvironmentName,
     time = DateTime.UtcNow
 }));
 
 // ======================================================
-// 6) Ejecutar aplicación
+// 5) Run
 // ======================================================
 app.Run();
