@@ -22,6 +22,10 @@ namespace AgroMarketApi.data
 
                 foreach (var property in entity.GetProperties())
                     property.SetColumnName(property.GetColumnName()!.ToLower());
+                    modelBuilder.Entity<Producto>().Property(p => p.Activo)
+    .HasColumnName("activo")
+    .HasDefaultValue(true);
+
             }
 
             // 🔗 Mapear tablas específicas (por si acaso)
