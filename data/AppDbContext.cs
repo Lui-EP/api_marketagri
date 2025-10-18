@@ -15,27 +15,25 @@ namespace AgroMarketApi.data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // 🔠 Convierte todas las tablas y columnas a minúsculas
+            // 🔠 Forzar nombres de tablas y columnas en minúsculas
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {
                 entity.SetTableName(entity.GetTableName()!.ToLower());
 
                 foreach (var property in entity.GetProperties())
+                {
                     property.SetColumnName(property.GetColumnName()!.ToLower());
-                    modelBuilder.Entity<Producto>().Property(p => p.Activo)
-    .HasColumnName("activo")
-    .HasDefaultValue(true);
-
+                }
             }
 
-            // 🔗 Mapear tablas específicas (por si acaso)
+            // 🔗 Mapear tablas explícitamente (opcional pero claro)
             modelBuilder.Entity<Usuario>().ToTable("usuarios");
             modelBuilder.Entity<Producto>().ToTable("productos");
             modelBuilder.Entity<Interes>().ToTable("intereses");
             modelBuilder.Entity<Chat>().ToTable("chats");
             modelBuilder.Entity<Mensaje>().ToTable("mensajes");
 
-            // 🧩 Mapear columnas personalizadas
+            // 🧩 Mapear columnas personalizadas (snake_case)
             modelBuilder.Entity<Usuario>().Property(p => p.Fecha_Registro).HasColumnName("fecha_registro");
             modelBuilder.Entity<Usuario>().Property(p => p.Ultima_Conexion).HasColumnName("ultima_conexion");
 
@@ -55,6 +53,12 @@ namespace AgroMarketApi.data
             modelBuilder.Entity<Mensaje>().Property(p => p.Remitente_Id).HasColumnName("remitente_id");
             modelBuilder.Entity<Mensaje>().Property(p => p.Mensaje_Texto).HasColumnName("mensaje");
             modelBuilder.Entity<Mensaje>().Property(p => p.Fecha_Envio).HasColumnName("fecha_envio");
+
+            // ✅ Mapeo de Activo (fuera del foreach)
+            modelBuilder.Entity<Producto>()
+                .Property(p => p.Activo)
+                .HasColumnName("activo")
+                .HasDefaultValue(true);
 
             base.OnModelCreating(modelBuilder);
         }
