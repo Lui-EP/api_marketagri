@@ -3,29 +3,29 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ======================================================
-// 1) Configuración de base de datos
-// ======================================================
+// ========== 1) DB ==========
 builder.Services.AddDbContext<AppDbContext>(opts =>
     opts.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ======================================================
-// 2) CORS, controladores y Swagger
-// ======================================================
+// ========== 2) CORS + Controllers + Swagger ==========
+const string AllowFrontend = "AllowFrontend";
+
 builder.Services.AddControllers();
 
-// 🚀 Política de CORS explícita y global
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddPolicy(name: AllowFrontend, policy =>
     {
         policy
-            // 🔧 Acepta tu origen local de desarrollo
-            .WithOrigins("http://127.0.0.1:5500", "http://localhost:5500")
-            // 🔧 Acepta también tu dominio público de frontend (agrega el que uses si lo tienes)
-            .SetIsOriginAllowed(origin => true) // ⚠️ permite todos los orígenes (temporal, para Render)
+            // Orígenes permitidos: tu Render + local
+            .WithOrigins(
+                "https://agromarket-s920.onrender.com",
+                "http://localhost:5500",
+                "http://127.0.0.1:5500"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
+            // .AllowCredentials(); // sólo si usas cookies/autenticación con credenciales
     });
 });
 
@@ -34,29 +34,31 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ======================================================
-// 3) Middleware global (Render-friendly)
-// ======================================================
+// ========== 3) Binding al puerto de Render ==========
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Add($"http://0.0.0.0:{port}");
 
-// ✅ CORS ANTES que todo
-app.UseCors("AllowFrontend");
-
-// Render ya sirve HTTPS automáticamente — no lo fuerces
+// ========== 4) Pipeline ==========
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Si usas auth (JWT o similar)
+// Orden recomendado para CORS con endpoint routing:
+app.UseRouting();
+app.UseCors(AllowFrontend);
+
 app.UseAuthorization();
 
-// ======================================================
-// 4) Endpoints
-// ======================================================
+// ========== 5) Endpoints ==========
 app.MapControllers();
 
-// Health check
+// Respuesta a preflights (OPTIONS) de forma genérica:
+app.MapMethods("/{**any}", new[] { "OPTIONS" }, () => Results.Ok())
+   .AllowAnonymous();
+
+// Health checks (uno sin DB y otro con DB si quieres)
 app.MapGet("/", () => Results.Ok(new
 {
     ok = true,
@@ -66,7 +68,6 @@ app.MapGet("/", () => Results.Ok(new
     time = DateTime.UtcNow
 }));
 
-// ======================================================
-// 5) Run
-// ======================================================
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+
 app.Run();
